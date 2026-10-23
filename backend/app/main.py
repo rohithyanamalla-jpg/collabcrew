@@ -37,6 +37,7 @@ default_origins = [
     "http://10.119.188.34:5173",
     "http://10.119.188.34:5174",
     "https://creovanta-corrected-project-zip-2-if8e.onrender.com",
+    https://collabcrew.onrender.com
 ]
 configured_origins = [
     origin.strip().rstrip("/")
