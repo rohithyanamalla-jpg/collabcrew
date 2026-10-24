@@ -36,6 +36,7 @@ default_origins = [
     "http://10.55.184.34:5174",
     "http://10.119.188.34:5173",
     "http://10.119.188.34:5174",
+    "http://172.16.1.18:5173",
     "https://creovanta-corrected-project-zip-2-if8e.onrender.com",
     "https://collabcrew.onrender.com",
 ]
@@ -265,18 +266,7 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
         raise HTTPException(422, "Role must be creator or brand")
 
     if db.query(User).filter_by(email=email).first():
-        raise HTTPException(
-            409, "An account with this email already exists"
-        )
-
-    # Generate a six-digit OTP and store only its hash.
-    otp = f"{secrets.randbelow(1_000_000):06d}"
-    otp_hash = hashlib.sha256(
-        f"{email}:{otp}".encode()
-    ).hexdigest()
-
-    # Send the email before creating the account.
-    send_verification_email(email, otp)
+        raise HTTPException(409, "An account with this email already exists")
 
     user = User(
         name=name,
@@ -286,9 +276,9 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
         avatar_url="".join(
             part[0] for part in name.split()[:2]
         ).upper(),
-        email_verified=False,
-        otp_hash=otp_hash,
-        otp_expires_at=datetime.utcnow() + timedelta(minutes=10),
+        email_verified=True,
+        otp_hash=None,
+        otp_expires_at=None,
     )
 
     try:
@@ -322,84 +312,9 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
         raise
 
     return {
-        "message": "Verification code sent to your email.",
+        "message": "Registration successful. You can now sign in.",
         "email": email,
-        "requires_verification": True,
-    }
-@app.post("/api/auth/resend-otp")
-def resend_otp(payload: dict, db: Session = Depends(get_db)):
-    email = str(payload.get("email", "")).strip().lower()
-
-    if not email or "@" not in email:
-        raise HTTPException(422, "Enter a valid email address")
-
-    user = db.query(User).filter_by(email=email).first()
-
-    if not user:
-        raise HTTPException(404, "Account not found. Please register first.")
-
-    if user.email_verified:
-        raise HTTPException(400, "Email is already verified. Please sign in.")
-
-    otp = f"{secrets.randbelow(1_000_000):06d}"
-    otp_hash = hashlib.sha256(f"{email}:{otp}".encode()).hexdigest()
-
-    # Send the email before updating the stored OTP.
-    send_verification_email(email, otp)
-
-    user.otp_hash = otp_hash
-    user.otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
-    db.commit()
-
-    return {
-        "message": "Verification code sent to your email.",
-        "email": email,
-        "requires_verification": True,
-    }
-
-@app.post("/api/auth/verify-otp")
-def verify_otp(payload: dict, db: Session = Depends(get_db)):
-    email = str(payload.get("email", "")).strip().lower()
-    otp = str(payload.get("otp", "")).strip()
-
-    if len(otp) != 6 or not otp.isdigit():
-        raise HTTPException(422, "Enter the six-digit verification code")
-
-    user = db.query(User).filter_by(email=email).first()
-
-    if not user:
-        raise HTTPException(404, "Account not found. Please register again.")
-
-    if user.email_verified:
-        raise HTTPException(400, "Email is already verified. Please sign in.")
-
-    if not user.otp_hash or not user.otp_expires_at:
-        raise HTTPException(400, "No active verification code.")
-
-    if datetime.utcnow() > user.otp_expires_at:
-        user.otp_hash = None
-        user.otp_expires_at = None
-        db.commit()
-        raise HTTPException(400, "Code expired. Please register again.")
-
-    candidate_hash = hashlib.sha256(
-        f"{email}:{otp}".encode()
-    ).hexdigest()
-
-    if not hmac.compare_digest(candidate_hash, user.otp_hash):
-        raise HTTPException(400, "Incorrect verification code.")
-
-    user.email_verified = True
-    user.otp_hash = None
-    user.otp_expires_at = None
-
-    db.commit()
-    db.refresh(user)
-
-    return {
-        "access_token": create_token(user),
-        "token_type": "bearer",
-        "user": user_out(user),
+        "requires_verification": False,
     }
 
 @app.post("/api/auth/login")
@@ -411,14 +326,6 @@ def login(payload: LoginIn, db: Session = Depends(get_db)):
         payload.password, user.password_hash
     ):
         raise HTTPException(401, "Email or password is incorrect")
-
-    is_demo = email.endswith("@demo.creovanta.app")
-
-    if not is_demo and not getattr(user, "email_verified", False):
-        raise HTTPException(
-            403,
-            "Please verify your email before signing in."
-        )
 
     return {
         "access_token": create_token(user),

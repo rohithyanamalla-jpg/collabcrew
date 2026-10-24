@@ -136,14 +136,107 @@ function App(){
       </div><footer className="app-footer"><div><span className="footer-mark">✳</span> CREOVANTA <span>© 2026 · Create beyond imagination.</span></div><div><span className="footer-status"><i/> API-connected experience</span><span>Built for ByteXL Hackathon</span></div></footer>
     </main>
     {toast&&<div className={`toast ${toast.type==='error'?'toast-error':''}`}><span>{toast.type==='error'?<AlertCircle size={18}/>:<CheckCircle2 size={18}/>}</span>{toast.message}<button onClick={()=>setToast(null)}><X size={15}/></button></div>}
-    {showLogin&&<Modal title={awaitingVerification?'Verify your email':loginMode==='register'?'Create your account':'Welcome back'} subtitle={awaitingVerification?`Enter the 6-digit code sent to ${email}.`: 'Access your CREOVANTA creative workspace.'} onClose={()=>{setShowLogin(false);setAwaitingVerification(false);setOtp('')}}>
-      {!awaitingVerification&&<div className="login-tabs"><button className={loginMode==='login'?'selected':''} onClick={()=>{setLoginMode('login');setAwaitingVerification(false)}}>Sign in</button><button className={loginMode==='register'?'selected':''} onClick={()=>{setLoginMode('register');setAwaitingVerification(false);setFullName('');setEmail('');setPassword('')}}>Create account</button></div>}
-      {awaitingVerification ? <form onSubmit={e=>{e.preventDefault();verifyEmailOtp()}}><div className="field-label">Email address<input type="email" value={email} readOnly/></div><div className="field-label">6-digit verification code<input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,'').slice(0,6))} placeholder="Enter OTP" required/></div><button className="btn btn-primary full-btn" disabled={authBusy||otp.length!==6}>{authBusy?'Please wait…':'Verify email'} <CheckCircle2 size={16}/></button><button type="button" className="btn btn-ghost full-btn" disabled={authBusy} onClick={resendEmailOtp}>Resend code</button><p className="modal-footnote">The code expires after 10 minutes. Check your spam folder too.</p></form> : <>
-      {loginMode==='register'&&<><div className="field-label">Full name<input type="text" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your full name" autoComplete="name" required/></div><div className="field-label">Account type<select value={loginRole} onChange={e=>setLoginRole(e.target.value)}><option value="creator">Creator</option><option value="brand">Brand / Agency</option></select></div></>}
-      <div className="field-label">Email address<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required/></div><div className="field-label">Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete={loginMode==='register'?'new-password':'current-password'} minLength={8} required/></div><button className="btn btn-primary full-btn" disabled={authBusy||!email.trim()||!password||(loginMode==='register'&&!fullName.trim())} onClick={()=>signIn()}>{authBusy?'Please wait…':loginMode==='register'?'Create account':'Sign in'} <ArrowUpRight size={16}/></button>
-      {loginMode==='login'&&<><div className="login-divider"><span>OR TRY A DEMO ROLE</span></div><div className="demo-login-grid"><button onClick={()=>loginAs('creator')}><UserRound size={16}/><span><b>Creator</b><small>Portfolio & applications</small></span></button><button onClick={()=>loginAs('brand')}><BriefcaseBusiness size={16}/><span><b>Brand</b><small>Briefs & campaigns</small></span></button><button onClick={()=>loginAs('admin')}><Settings size={16}/><span><b>Admin</b><small>Review tools</small></span></button></div><p className="modal-footnote">Demo password for all roles: <code>DemoPass123!</code></p></>}
-      </>}
-    </Modal>}
+    
+{showLogin && (
+  <Modal
+    title={loginMode === 'register' ? 'Create your account' : 'Welcome back'}
+    subtitle="Access your COLLABCREW creative workspace."
+    onClose={() => setShowLogin(false)}
+  >
+    <div className="login-tabs">
+      <button
+        className={loginMode === 'login' ? 'selected' : ''}
+        onClick={() => setLoginMode('login')}
+      >
+        Sign in
+      </button>
+      <button
+        className={loginMode === 'register' ? 'selected' : ''}
+        onClick={() => setLoginMode('register')}
+      >
+        Create account
+      </button>
+    </div>
+
+    {loginMode === 'register' && (
+      <>
+        <div className="field-label">
+          Full name
+          <input
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
+            placeholder="Your full name"
+            autoComplete="name"
+          />
+        </div>
+        <div className="field-label">
+          Account type
+          <select value={loginRole} onChange={e => setLoginRole(e.target.value)}>
+            <option value="creator">Creator</option>
+            <option value="brand">Brand / Agency</option>
+          </select>
+        </div>
+      </>
+    )}
+
+    <div className="field-label">
+      Email address
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="you@example.com"
+        autoComplete="email"
+      />
+    </div>
+
+    <div className="field-label">
+      Password
+      <input
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="At least 8 characters"
+        autoComplete={loginMode === 'register' ? 'new-password' : 'current-password'}
+      />
+    </div>
+
+    <button
+      className="btn btn-primary full-btn"
+      disabled={authBusy || !email.trim() || !password || (loginMode === 'register' && !fullName.trim())}
+      onClick={() => signIn()}
+    >
+      {authBusy ? 'Please wait…' : loginMode === 'register' ? 'Create account' : 'Sign in'}
+      <ArrowUpRight size={16} />
+    </button>
+
+    {loginMode === 'login' && (
+      <>
+        <div className="login-divider">
+          <span>OR TRY A DEMO ROLE</span>
+        </div>
+        <div className="demo-login-grid">
+          <button onClick={() => loginAs('creator')}>
+            <UserRound size={16} />
+            <span><b>Creator</b><small>Portfolio & applications</small></span>
+          </button>
+          <button onClick={() => loginAs('brand')}>
+            <BriefcaseBusiness size={16} />
+            <span><b>Brand</b><small>Briefs & campaigns</small></span>
+          </button>
+          <button onClick={() => loginAs('admin')}>
+            <Settings size={16} />
+            <span><b>Admin</b><small>Review tools</small></span>
+          </button>
+        </div>
+        <p className="modal-footnote">
+          Demo password for all roles: <code>DemoPass123!</code>
+        </p>
+      </>
+    )}
+  </Modal>
+)}
+
     {showProjectForm&&<Modal title={editingProject?'Edit portfolio project':'Add portfolio project'} subtitle="Show your work and document the workflow behind it." onClose={()=>setShowProjectForm(false)} wide><form onSubmit={saveProject}><div className="form-grid"><Field label="Project title"><input required minLength="2" value={projectForm.title} onChange={e=>setProjectForm({...projectForm,title:e.target.value})}/></Field><Field label="Content type"><select value={projectForm.content_type} onChange={e=>setProjectForm({...projectForm,content_type:e.target.value})}>{['AI Video','AI Image','Animation','Advertisement','Social Video','Experimental Art'].map(x=><option>{x}</option>)}</select></Field><Field label="Visual style"><select value={projectForm.visual_style} onChange={e=>setProjectForm({...projectForm,visual_style:e.target.value})}>{['Cinematic','Realistic','3D','Anime','Minimal','Editorial','Futuristic','Experimental'].map(x=><option>{x}</option>)}</select></Field><Field label="Preview image/video URL"><input value={projectForm.preview_url} onChange={e=>setProjectForm({...projectForm,preview_url:e.target.value})} placeholder="https://... (optional)"/></Field><Field label="AI tools (comma-separated)" wide><input value={projectForm.tools} onChange={e=>setProjectForm({...projectForm,tools:e.target.value})}/></Field><Field label="Skills demonstrated" wide><input value={projectForm.skills} onChange={e=>setProjectForm({...projectForm,skills:e.target.value})}/></Field><Field label="Description" wide><textarea rows="3" required value={projectForm.description} onChange={e=>setProjectForm({...projectForm,description:e.target.value})}/></Field><Field label="Workflow steps" wide><textarea rows="3" value={projectForm.workflow} onChange={e=>setProjectForm({...projectForm,workflow:e.target.value})}/></Field><Field label="Prompt/process notes" wide><textarea rows="2" value={projectForm.prompt_notes} onChange={e=>setProjectForm({...projectForm,prompt_notes:e.target.value})}/></Field><Field label="Aspect ratio"><select value={projectForm.aspect_ratio} onChange={e=>setProjectForm({...projectForm,aspect_ratio:e.target.value})}>{['9:16','16:9','1:1','4:5','Custom'].map(x=><option>{x}</option>)}</select></Field><Field label="Output format"><select value={projectForm.output_format} onChange={e=>setProjectForm({...projectForm,output_format:e.target.value})}>{['MP4','PNG','WEBP','JPG','GIF','MOV','PDF'].map(x=><option>{x}</option>)}</select></Field><Field label="Visibility"><select value={projectForm.visibility} onChange={e=>setProjectForm({...projectForm,visibility:e.target.value})}><option>Public</option><option>Private</option></select></Field><Field label="License"><select value={projectForm.license_type} onChange={e=>setProjectForm({...projectForm,license_type:e.target.value})}>{['Review required','Personal portfolio only','Non-exclusive commercial license','Exclusive license by agreement','Demo only — confirm commercial terms'].map(x=><option>{x}</option>)}</select></Field></div><div className="checkbox-line"><label><input type="checkbox" checked={projectForm.prompt_private} onChange={e=>setProjectForm({...projectForm,prompt_private:e.target.checked})}/> Keep prompt notes private</label><label><input type="checkbox" checked={projectForm.commercial_use} onChange={e=>setProjectForm({...projectForm,commercial_use:e.target.checked})}/> Commercial use terms stated</label></div><div className="form-actions"><button type="button" className="btn btn-ghost" onClick={()=>setShowProjectForm(false)}>Cancel</button><button className="btn btn-primary"><CheckCircle2 size={16}/> Save project</button></div></form></Modal>}
     {showBriefForm&&<Modal title={briefEditing?'Edit creative brief':'Create creative brief'} subtitle="Define the deliverables, scope, budget, and usage rights clearly." onClose={()=>setShowBriefForm(false)} wide><form onSubmit={e=>saveBrief(e,false)}><div className="form-section-head"><div><h3>Campaign details</h3><p>AI-generated suggestions remain editable until you publish.</p></div></div><div className="form-grid"><Field label="Campaign title"><input required minLength="3" value={briefForm.title} onChange={e=>setBriefForm({...briefForm,title:e.target.value})}/></Field><Field label="Brand / agency"><input value={briefForm.brand_name} onChange={e=>setBriefForm({...briefForm,brand_name:e.target.value})} required/></Field><Field label="Industry"><select value={briefForm.industry} onChange={e=>setBriefForm({...briefForm,industry:e.target.value})}>{['Technology','Beauty','Fashion','Entertainment','Finance','Travel','Gaming','Environment','Food','Education','Other'].map(x=><option>{x}</option>)}</select></Field><Field label="Objective"><select value={briefForm.objective} onChange={e=>setBriefForm({...briefForm,objective:e.target.value})}>{['Brand awareness','Product launch','Engagement','Conversions','Education','Community growth'].map(x=><option>{x}</option>)}</select></Field><Field label="Content type"><select value={briefForm.content_type} onChange={e=>setBriefForm({...briefForm,content_type:e.target.value})}>{['AI Video','Animation','AI Image','Advertisement','Social Video','Explainer','Custom'].map(x=><option>{x}</option>)}</select></Field><Field label="Visual style"><select value={briefForm.visual_style} onChange={e=>setBriefForm({...briefForm,visual_style:e.target.value})}>{['Cinematic','Realistic','3D','Anime','Minimal','Editorial','Futuristic','Experimental','Custom'].map(x=><option>{x}</option>)}</select></Field><Field label="Platform"><select value={briefForm.platform} onChange={e=>setBriefForm({...briefForm,platform:e.target.value})}>{['Instagram Reels','Instagram','YouTube','Website','Advertising campaign','Other'].map(x=><option>{x}</option>)}</select></Field><Field label="Aspect ratio"><select value={briefForm.aspect_ratio} onChange={e=>setBriefForm({...briefForm,aspect_ratio:e.target.value})}>{['9:16','16:9','1:1','4:5','Custom'].map(x=><option>{x}</option>)}</select></Field><Field label="Target audience" wide><input value={briefForm.target_audience} onChange={e=>setBriefForm({...briefForm,target_audience:e.target.value})}/></Field><Field label="Campaign description" wide><textarea rows="4" required minLength="10" value={briefForm.description} onChange={e=>setBriefForm({...briefForm,description:e.target.value})}/></Field><Field label="Minimum budget (₹)"><input type="number" min="0" value={briefForm.budget_min} onChange={e=>setBriefForm({...briefForm,budget_min:e.target.value})}/></Field><Field label="Maximum budget (₹)"><input type="number" min="0" value={briefForm.budget_max} onChange={e=>setBriefForm({...briefForm,budget_max:e.target.value})}/></Field><Field label="Deadline"><input type="date" min={new Date().toISOString().slice(0,10)} value={briefForm.deadline} onChange={e=>setBriefForm({...briefForm,deadline:e.target.value})}/></Field><Field label="Number of deliverables"><input type="number" min="1" max="100" value={briefForm.deliverables} onChange={e=>setBriefForm({...briefForm,deliverables:e.target.value})}/></Field><Field label="Required skills (comma-separated)" wide><input value={briefForm.required_skills} onChange={e=>setBriefForm({...briefForm,required_skills:e.target.value})}/></Field><Field label="Preferred AI tools (comma-separated)" wide><input value={briefForm.required_tools} onChange={e=>setBriefForm({...briefForm,required_tools:e.target.value})}/></Field><Field label="License type"><select value={briefForm.license_type} onChange={e=>setBriefForm({...briefForm,license_type:e.target.value})}>{['Non-exclusive campaign license','Exclusive license by agreement','Usage license only','To be negotiated'].map(x=><option>{x}</option>)}</select></Field><Field label="AI disclosure"><select value={briefForm.ai_disclosure} onChange={e=>setBriefForm({...briefForm,ai_disclosure:e.target.value})}>{['Disclose AI-generated content','Follow platform requirements','To be confirmed'].map(x=><option>{x}</option>)}</select></Field><Field label="Usage rights" wide><textarea rows="2" value={briefForm.usage_rights} onChange={e=>setBriefForm({...briefForm,usage_rights:e.target.value})}/></Field><Field label="Revision rounds"><input type="number" min="0" max="20" value={briefForm.revision_rounds} onChange={e=>setBriefForm({...briefForm,revision_rounds:e.target.value})}/></Field><Field label="Output format"><select value={briefForm.output_format} onChange={e=>setBriefForm({...briefForm,output_format:e.target.value})}>{['MP4','PNG','WEBP','MOV','GIF','PDF','Custom'].map(x=><option>{x}</option>)}</select></Field></div><div className="checkbox-line"><label><input type="checkbox" checked={briefForm.commercial_use} onChange={e=>setBriefForm({...briefForm,commercial_use:e.target.checked})}/> Commercial use required</label></div><div className="form-actions"><button type="button" className="btn btn-ghost" onClick={()=>setShowBriefForm(false)}>Cancel</button><button type="button" className="btn btn-ghost" onClick={e=>saveBrief(e,false)}>Save draft</button><button type="button" className="btn btn-primary" onClick={e=>saveBrief(e,true)}><Send size={15}/> Publish brief</button></div></form></Modal>}
     {applicationBrief&&<Modal title="Apply to this brief" subtitle={applicationBrief.title} onClose={()=>setApplicationBrief(null)}><form onSubmit={applyToBrief}><div className="field-label">Your proposal<textarea rows="6" minLength="10" required value={applicationText} onChange={e=>setApplicationText(e.target.value)}/></div><div className="rights-callout"><AlertCircle size={16}/><span>Confirm the deliverables, budget, AI disclosure, and licensing terms with the brand before beginning paid work.</span></div><button className="btn btn-primary full-btn"><Send size={16}/> Submit application</button></form></Modal>}
